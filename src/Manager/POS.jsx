@@ -216,6 +216,16 @@ export default function POS({ items = [], orders = [], onCheckout }) {
     [localOrders]
   );
 
+  // Remove synced orders from local state when they are removed from IndexedDB
+  useEffect(() => {
+    const handleSyncedRemoval = () => {
+      setLocalOrders((prev) => prev.filter((order) => !order.itemsSynced || order.billOpen));
+    };
+
+    window.addEventListener(POS_EVENT, handleSyncedRemoval);
+    return () => window.removeEventListener(POS_EVENT, handleSyncedRemoval);
+  }, []);
+
   const available = useMemo(
     () => (menu.length ? menu : items).filter((item) => item.available !== false),
     [menu, items]

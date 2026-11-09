@@ -8,7 +8,6 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Addtocartcontext>
     <App />
-
     </Addtocartcontext>
   </StrictMode>,
 )

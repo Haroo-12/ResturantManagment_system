@@ -9,6 +9,7 @@ import useOrders, {
 } from "../Logic/useOrders.js";
 import { get, update } from "idb-keyval";
 import { POS_ORDERS, POS_EVENT, startAutoSync } from "../Logic/posSync.js";
+import { getOrdersForCurrentBusinessDay } from "../Logic/dailyClosing.js";
 
 // Is status par order automatically "paid" ho jata hai.
 // "confirmed" ya "delivered" likho, ya null likho to auto-paid band.
@@ -31,11 +32,26 @@ export default function OrdersManagement() {
   );
 
   const [localOrders, setLocalOrders] = useState([]);
+  const [currentBusinessDayOrders, setCurrentBusinessDayOrders] = useState([]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [source, setSource] = useState("all");
   const [selected, setSelected] = useState(null);
   const [actionError, setActionError] = useState("");
+
+  // Load current business day orders (after last closing)
+  useEffect(() => {
+    const loadCurrentBusinessDayOrders = async () => {
+      try {
+        const businessOrders = await getOrdersForCurrentBusinessDay();
+        setCurrentBusinessDayOrders(businessOrders);
+      } catch (err) {
+        console.error("Error loading current business day orders:", err);
+      }
+    };
+
+    loadCurrentBusinessDayOrders();
+  }, []);
 
   const loadLocalOrders = useCallback(async () => {
     try {
@@ -64,11 +80,11 @@ export default function OrdersManagement() {
   }, [loadLocalOrders]);
 
   // Only show local POS orders that have NOT synced to Supabase.
-  // Synced POS orders are already included in websiteOrders from Supabase.
+  // Synced POS orders are removed from IndexedDB and already included in websiteOrders from Supabase.
   const unsyncedPosOrders = useMemo(
     () =>
       localOrders
-        .filter((order) => !order.supabaseId)
+        .filter((order) => !order.supabaseId && !order.itemsSynced)
         .map((order) => ({
           ...order,
           dbId: null,
@@ -91,9 +107,15 @@ export default function OrdersManagement() {
     [localOrders]
   );
 
+  // Filter website orders to show only current business day orders
+  const currentBusinessDayWebsiteOrders = useMemo(() => {
+    const currentBusinessDayIds = new Set(currentBusinessDayOrders.map(o => o.id));
+    return websiteOrders.filter(order => currentBusinessDayIds.has(order.dbId));
+  }, [websiteOrders, currentBusinessDayOrders]);
+
   const orders = useMemo(
-    () => [...unsyncedPosOrders, ...websiteOrders],
-    [unsyncedPosOrders, websiteOrders]
+    () => [...unsyncedPosOrders, ...currentBusinessDayWebsiteOrders],
+    [unsyncedPosOrders, currentBusinessDayWebsiteOrders]
   );
 
   const onStatusChange = async (id, nextStatus) => {

@@ -39,7 +39,6 @@ export default function ManagerPanel() {
   const [orders, setOrders] = useState(() => cloneData(enrichedOrders));
   const [menu] = useState(() => cloneData(menuItems));
   const [people] = useState(() => cloneData(customers));
-  const [closed, setClosed] = useState(false);
 
   const titles = useMemo(
     () => Object.fromEntries(navItems.map((item) => [item.id, item.label])),
@@ -113,7 +112,7 @@ export default function ManagerPanel() {
           {page === "pos" ? <POS items={menu} orders={orders} onCheckout={checkout} /> : null}
           {page === "kitchen" ? <KitchenPrinting orders={orders} /> : null}
           {page === "customers" ? <Customers customers={people} orders={orders} /> : null}
-          {page === "closing" ? <DailyClosing orders={orders} closed={closed} onCloseDay={() => setClosed(true)} /> : null}
+          {page === "closing" ? <DailyClosing /> : null}
         </main>
       </div>
     </div>

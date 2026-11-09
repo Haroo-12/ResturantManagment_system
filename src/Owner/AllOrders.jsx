@@ -1,90 +1,24 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import PageHeader from "../AdminPagesComponents/PageHeader";
 import OrdersTable from "../AdminPagesComponents/OrdersTable";
 import OrderDetailsModal from "../AdminPagesComponents/OrderDetailsModal";
 import useOrders, { toUiOrder, ORDER_STATUS_OPTIONS } from "../Logic/useOrders.js";
-import { get } from "idb-keyval";
 
 const PAGE_SIZE = 8;
-const POS_ORDERS = "pos-orders";
 
 // canEdit: true ho to table mein status badalne ka dropdown aata hai (manager ke liye)
 export default function AllOrders({ canEdit = false }) {
-  // Orders ab seedha Supabase se aate hain (props ya mock data ki zaroorat nahi)
+  // Owner Panel: Orders seedha Supabase se aate hain (no IndexedDB for Owner)
+  // IndexedDB is only for Manager's unsynced POS orders
   const { orders: rows, loading, error, updateStatus } = useOrders();
-  const websiteOrders = useMemo(() => rows.map(toUiOrder), [rows]);
-
-  const [localOrders, setLocalOrders] = useState([]);
-
-  const loadLocalOrders = useCallback(async () => {
-    try {
-      const saved = (await get(POS_ORDERS)) || [];
-      setLocalOrders(saved);
-    } catch (err) {
-      console.error("Could not load local POS orders:", err);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadLocalOrders();
-
-    const handleFocus = () => loadLocalOrders();
-    const handleStorage = () => loadLocalOrders();
-
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, [loadLocalOrders]);
-
-  const posOrders = useMemo(
-    () =>
-      localOrders.map((order) => ({
-        ...order,
-        dbId: order.supabaseId || order.localId,
-        id: order.supabaseId ? `#${order.supabaseId}` : order.displayId || `#${order.localId}`,
-        source: "pos",
-        createdAt: order.createdAt
-          ? new Date(order.createdAt).toLocaleString()
-          : "",
-        // POS: cod is unpaid until payment is received
-        paymentStatus: order.paymentMethod === "cod" ? "unpaid" : "pending",
-        items: (order.items || []).map((item) => ({
-          ...item,
-          name: item.name,
-          price: Number(item.price || 0),
-          qty: Number(item.qty || 0),
-        })),
-      })),
-    [localOrders]
-  );
-
-  const orders = useMemo(() => {
-    // Deduplicate: if a local POS order has a supabaseId that matches a website order,
-    // only keep the website order (source of truth from Supabase)
-    const syncedPosIds = new Set(
-      posOrders
-        .filter((o) => o.supabaseId)
-        .map((o) => o.supabaseId)
-    );
-
-    const filteredWebsite = websiteOrders.filter(
-      (o) => !syncedPosIds.has(o.dbId)
-    );
-
-    return [...posOrders, ...filteredWebsite];
-  }, [posOrders, websiteOrders]);
+  const orders = useMemo(() => rows.map(toUiOrder), [rows]);
 
   // Table ke dropdown se status badalna: table ki id "#12" hoti hai, database ko asli id chahiye
   const handleStatus = (id, next) => {
-    const dbId = orders.find((o) => o.id === id)?.dbId;
-    // Only update status for Supabase orders (numeric dbId)
-    if (dbId && typeof dbId === "number") {
-      updateStatus(dbId, next);
+    const order = orders.find((o) => o.id === id);
+    if (order && order.dbId && typeof order.dbId === "number") {
+      updateStatus(order.dbId, next);
     }
   };
 

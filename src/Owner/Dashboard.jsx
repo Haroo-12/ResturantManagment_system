@@ -1,23 +1,31 @@
-import { Banknote, ClipboardList, Clock3, TrendingUp } from "lucide-react";
+import { Banknote, ClipboardList, Clock3, TrendingUp, XCircle } from "lucide-react";
 import PageHeader from "../AdminPagesComponents/PageHeader";
 import StatsCard from "../AdminPagesComponents/StatsCard";
 import OrdersTable from "../AdminPagesComponents/OrdersTable";
-import { formatPKR, ownerStats, salesByDay } from "../Arrays/Mockdata";
+import { formatPKR } from "../Arrays/Mockdata";
+import useOwnerData from "../Logic/useOwnerData.js";
+import useOrders, { toUiOrder } from "../Logic/useOrders.js";
 
-export default function Dashboard({ orders, onViewOrder }) {
-  const pending = orders.filter((order) => order.status === "pending").length;
+export default function Dashboard({ onViewOrder }) {
+  const { stats, salesByDay, loading } = useOwnerData();
+  const { orders: rows } = useOrders();
+  const orders = rows.map(toUiOrder);
   const recent = orders.slice(0, 6);
   const maxRevenue = Math.max(...salesByDay.map((day) => day.revenue), 1);
+
+  if (loading) {
+    return <p className="py-16 text-center text-sm text-slate-500">Loading dashboard...</p>;
+  }
 
   return (
     <section>
       <PageHeader title="Owner Dashboard" subtitle="Sales, profit and live order snapshot for Clifton Flagship." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatsCard title="Total Sales" value={formatPKR(ownerStats.totalSales)} hint="October to date" icon={Banknote} />
-        <StatsCard title="Estimated Profit" value={formatPKR(ownerStats.profit)} hint="After item cost" icon={TrendingUp} tone="emerald" />
-        <StatsCard title="Total Orders" value={ownerStats.totalOrders} hint={`Avg ticket ${formatPKR(ownerStats.avgTicket)}`} icon={ClipboardList} tone="slate" />
-        <StatsCard title="Pending Orders" value={pending} hint="Need attention today" icon={Clock3} tone="amber" />
+        <StatsCard title="Total Sales" value={formatPKR(stats.totalSales)} hint="Last 30 days" icon={Banknote} />
+        <StatsCard title="Estimated Profit" value={formatPKR(stats.profit || 0)} hint="After item cost" icon={TrendingUp} tone="emerald" />
+        <StatsCard title="Total Orders" value={stats.totalOrders} hint="Last 30 days" icon={ClipboardList} tone="slate" />
+        <StatsCard title="Cancelled Orders" value={stats.cancelledOrders} hint="Last 30 days" icon={XCircle} tone="red" />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -43,19 +51,29 @@ export default function Dashboard({ orders, onViewOrder }) {
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-semibold text-slate-900">Today at a glance</h2>
           <ul className="mt-4 space-y-3 text-sm">
-            {salesByDay.slice(-3).map((day) => (
-              <li key={day.label} className="flex items-center justify-between rounded-xl bg-[var(--color-box)] px-3 py-2.5">
-                <span className="text-slate-600">{day.label}</span>
-                <span className="font-semibold text-slate-900">{formatPKR(day.revenue)}</span>
-              </li>
-            ))}
+            <li className="flex items-center justify-between rounded-xl bg-[var(--color-box)] px-3 py-2.5">
+              <span className="text-slate-600">Completed</span>
+              <span className="font-semibold text-slate-900">{stats.completedOrders}</span>
+            </li>
+            <li className="flex items-center justify-between rounded-xl bg-[var(--color-box)] px-3 py-2.5">
+              <span className="text-slate-600">Pending</span>
+              <span className="font-semibold text-slate-900">{stats.pendingOrders}</span>
+            </li>
+            <li className="flex items-center justify-between rounded-xl bg-[var(--color-box)] px-3 py-2.5">
+              <span className="text-slate-600">Weekly Sales</span>
+              <span className="font-semibold text-slate-900">{formatPKR(stats.weeklySales)}</span>
+            </li>
+            <li className="flex items-center justify-between rounded-xl bg-[var(--color-box)] px-3 py-2.5">
+              <span className="text-slate-600">Monthly Sales</span>
+              <span className="font-semibold text-slate-900">{formatPKR(stats.monthlySales)}</span>
+            </li>
           </ul>
         </article>
       </div>
 
       <div className="mt-6">
         <h2 className="mb-3 text-base font-semibold text-slate-900">Recent orders</h2>
-        <OrdersTable orders={recent} onView={onViewOrder} emptyMessage="No recent orders in this demo session." />
+        <OrdersTable orders={recent} onView={onViewOrder} emptyMessage="No recent orders." />
       </div>
     </section>
   );

@@ -1,18 +1,134 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Banknote, Percent, ShoppingBag } from "lucide-react";
 import PageHeader from "../AdminPagesComponents/PageHeader";
 import StatsCard from "../AdminPagesComponents/StatsCard";
-import { categorySales, formatPKR, salesByDay, salesByMonth, salesByWeek } from "../Arrays/Mockdata";
-
-const ranges = {
-  daily: salesByDay,
-  weekly: salesByWeek,
-  monthly: salesByMonth,
-};
+import { formatPKR } from "../Arrays/Mockdata";
+import { supabase } from "../supabas.js";
+import {
+  getDailyClosingsHistory,
+  mapOrdersToBusinessDates,
+  toLocalDateString,
+} from "../Logic/dailyClosing.js";
 
 export default function SalesReports() {
   const [range, setRange] = useState("daily");
-  const series = ranges[range];
+  const [series, setSeries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadSalesData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const { data: orders, error: ordersError } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+
+      if (ordersError) throw ordersError;
+
+      const validOrders = (orders || []).filter(o => o.status !== "cancelled");
+
+      // Har order ko uski business date (session ki opening date) dena,
+      // taake raat 12 ke baad ki sales opening wale din mein count hon.
+      const closings = await getDailyClosingsHistory();
+      const businessDates = mapOrdersToBusinessDates(orders || [], closings);
+
+      if (range === "daily") {
+        // Last 7 days
+        const last7Days = [];
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = toLocalDateString(date);
+          const dayOrders = validOrders.filter(o => businessDates.get(o.id) === dateStr);
+          const daySales = dayOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+          const dayCost = dayOrders.reduce((sum, o) => {
+            return sum + (o.order_items?.reduce((itemSum, item) => itemSum + (Number(item.cost || 0) * Number(item.qty || 0)), 0) || 0);
+          }, 0);
+          last7Days.push({
+            label: dayNames[date.getDay()],
+            revenue: daySales,
+            profit: daySales - dayCost,
+            orders: dayOrders.length,
+          });
+        }
+        setSeries(last7Days);
+      } else if (range === "weekly") {
+        // Last 4 weeks
+        const weeks = [];
+        for (let i = 3; i >= 0; i--) {
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - (i * 7) - weekStart.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          const startStr = toLocalDateString(weekStart);
+          const endStr = toLocalDateString(weekEnd);
+
+          const weekOrders = validOrders.filter(o => {
+            const bd = businessDates.get(o.id);
+            return bd >= startStr && bd <= endStr;
+          });
+
+          const weekSales = weekOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+          const weekCost = weekOrders.reduce((sum, o) => {
+            return sum + (o.order_items?.reduce((itemSum, item) => itemSum + (Number(item.cost || 0) * Number(item.qty || 0)), 0) || 0);
+          }, 0);
+
+          weeks.push({
+            label: `W${4 - i}`,
+            revenue: weekSales,
+            profit: weekSales - weekCost,
+            orders: weekOrders.length,
+          });
+        }
+        setSeries(weeks);
+      } else if (range === "monthly") {
+        // Last 6 months
+        const months = [];
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date();
+          date.setMonth(date.getMonth() - i);
+          const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+          const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+          const startStr = toLocalDateString(monthStart);
+          const endStr = toLocalDateString(monthEnd);
+
+          const monthOrders = validOrders.filter(o => {
+            const bd = businessDates.get(o.id);
+            return bd >= startStr && bd <= endStr;
+          });
+
+          const monthSales = monthOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+          const monthCost = monthOrders.reduce((sum, o) => {
+            return sum + (o.order_items?.reduce((itemSum, item) => itemSum + (Number(item.cost || 0) * Number(item.qty || 0)), 0) || 0);
+          }, 0);
+
+          months.push({
+            label: monthNames[date.getMonth()],
+            revenue: monthSales,
+            profit: monthSales - monthCost,
+            orders: monthOrders.length,
+          });
+        }
+        setSeries(months);
+      }
+    } catch (err) {
+      console.error("Error loading sales data:", err);
+      setError(err.message || "Could not load sales data.");
+    } finally {
+      setLoading(false);
+    }
+  }, [range]);
+
+  useEffect(() => {
+    loadSalesData();
+  }, [loadSalesData]);
+
   const maxRevenue = Math.max(...series.map((item) => item.revenue), 1);
 
   const totals = useMemo(
@@ -30,11 +146,25 @@ export default function SalesReports() {
 
   const margin = totals.revenue ? Math.round((totals.profit / totals.revenue) * 100) : 0;
 
+  if (loading) {
+    return <p className="py-16 text-center text-sm text-slate-500">Loading sales reports...</p>;
+  }
+
+  // Mock category sales (can be replaced with real data later)
+  const categorySales = [
+    { category: "Coffees", revenue: totals.revenue * 0.28, share: 28 },
+    { category: "Flavoured Coffees", revenue: totals.revenue * 0.23, share: 23 },
+    { category: "Frappes", revenue: totals.revenue * 0.18, share: 18 },
+    { category: "Matcha", revenue: totals.revenue * 0.12, share: 12 },
+    { category: "Smoothies & Protein", revenue: totals.revenue * 0.11, share: 11 },
+    { category: "Others", revenue: totals.revenue * 0.08, share: 8 },
+  ];
+
   return (
     <section>
       <PageHeader
         title="Sales Reports"
-        subtitle="Compare revenue and estimated profit by period. Figures are demo data."
+        subtitle="Compare revenue and estimated profit by period."
         actions={
           <div className="flex rounded-xl border border-slate-200 bg-white p-1">
             {["daily", "weekly", "monthly"].map((id) => (

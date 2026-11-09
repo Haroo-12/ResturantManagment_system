@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import CategoryBanner from "./CategoryBanner";
 import ViewCart from "./ViewCart.jsx";
-import CartQuantityControl from "../Addtocartcomponents/CartQuantityControl.jsx";
+import CartQuantityControl from '../Addtocartcomponents/CartQuantityControl.jsx';
 import { AddtocartContexts } from "../AddtocartContext/Addtocartcontext";
 import PopularItems from "./PopularItems.jsx";
 import { supabase } from "../supabas.js"; // apna sahi path

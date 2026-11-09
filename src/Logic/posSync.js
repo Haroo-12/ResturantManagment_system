@@ -3,6 +3,7 @@
 // - POS orders are always saved in IndexedDB first ("pos-orders").
 // - Whenever internet is available, pending orders are pushed to Supabase
 //   `orders` + `order_items` (same tables the website uses).
+// - Successfully synced orders are REMOVED from IndexedDB to prevent stale data.
 // - Safe to call from many places: only one sync runs at a time.
 
 import { get, update } from "idb-keyval";
@@ -49,6 +50,15 @@ async function patchLocalOrder(localId, patch) {
       o.localId === localId ? { ...o, ...patch } : o
     )
   );
+  notify();
+}
+
+// Remove a successfully synced order from IndexedDB to prevent stale data
+async function removeSyncedOrder(localId) {
+  await update(POS_ORDERS, (all) => {
+    const list = Array.isArray(all) ? all : [];
+    return list.filter((o) => o.localId !== localId);
+  });
   notify();
 }
 
@@ -127,6 +137,9 @@ async function syncOne(order) {
       itemsSynced: true,
       syncStatus: "synced",
     });
+
+    // Step 3: Remove from IndexedDB after successful sync to prevent stale data
+    await removeSyncedOrder(order.localId);
   }
 }
 

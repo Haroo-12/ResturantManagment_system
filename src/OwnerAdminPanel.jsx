@@ -19,7 +19,6 @@ import DailyClosingHistory from "./Owner/DailyClosingHistory";
 import ManagerAccount from "./Owner/ManagerAccount";
 import {
   cloneData,
-  dailyClosings,
   enrichedOrders,
   formatPKR,
   managerAccounts,
@@ -41,7 +40,6 @@ export default function OwnerAdminPanel() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [orders] = useState(() => cloneData(enrichedOrders));
   const [menu, setMenu] = useState(() => cloneData(menuItems));
-  const [closings] = useState(() => cloneData(dailyClosings));
   const [managers, setManagers] = useState(() => cloneData(managerAccounts));
   const [selectedOrder, setSelectedOrder] = useState(null);
 
@@ -82,7 +80,7 @@ export default function OwnerAdminPanel() {
           role={ownerProfile.role}
         />
         <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">
-          {page === "dashboard" ? <Dashboard orders={orders} onViewOrder={setSelectedOrder} /> : null}
+          {page === "dashboard" ? <Dashboard onViewOrder={setSelectedOrder} /> : null}
           {page === "sales" ? <SalesReports /> : null}
           {page === "orders" ? <AllOrders orders={orders} /> : null}
           {page === "menu" ? (
@@ -92,7 +90,7 @@ export default function OwnerAdminPanel() {
               onDelete={(id) => setMenu((prev) => prev.filter((item) => item.id !== id))}
             />
           ) : null}
-          {page === "closing" ? <DailyClosingHistory records={closings} /> : null}
+          {page === "closing" ? <DailyClosingHistory /> : null}
           {page === "manager" ? <ManagerAccount managers={managers} onSave={saveManager} /> : null}
         </main>
       </div>
