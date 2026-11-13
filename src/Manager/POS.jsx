@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import PageHeader from "../AdminPagesComponents/PageHeader";
 import Modal from "../AdminPagesComponents/Modal";
-import { calcOrderTotals, formatPKR, TAX_RATE } from "../Arrays/Mockdata";
+import { calcOrderTotals, formatPKR } from "../Arrays/Mockdata";
 import { supabase } from "../supabas.js";
 import {
   POS_ORDERS,
@@ -241,7 +241,9 @@ export default function POS({ items = [], orders = [], onCheckout }) {
     });
   }, [available, query, category]);
 
-  const totals = calcOrderTotals(cart, discount, TAX_RATE);
+  // No tax on top: menu prices are final, same as the website checkout
+  // (grandTotal = sum of price*qty). Tax rate 0 keeps total = subtotal - discount.
+  const totals = calcOrderTotals(cart, discount, 0);
 
   const addItem = (item) => {
     setCart((previous) => {

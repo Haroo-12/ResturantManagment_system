@@ -153,7 +153,55 @@ export function mapOrdersToBusinessDates(orders, closings) {
   return result;
 }
 
-export function calculateClosingSummary(orders) {
+export const PROFIT_STATUSES = ["confirmed", "delivered", "completed"];
+
+// menu_items.id -> cost lookup. Purane orders mein order_items.cost_price
+// NULL ho to menu_item_id se current cost mil jata hai.
+export async function getMenuCosts() {
+  const { data, error } = await supabase.from("menu_items").select("id,cost");
+  if (error) throw error;
+  const map = new Map();
+  (data || []).forEach((m) => {
+    map.set(String(m.id), m.cost == null ? null : Number(m.cost));
+  });
+  return map;
+}
+
+export function calculateOrderGrossProfit(order, costMap) {
+  if (!order || !PROFIT_STATUSES.includes(order.status)) return 0;
+  const missing = [];
+  const profit = (order.order_items || order.items || []).reduce((sum, item) => {
+    const unitPrice = Number(item.unit_price ?? item.price ?? 0);
+    const menuCost =
+      item.menu_item_id != null ? costMap?.get(String(item.menu_item_id)) : undefined;
+    const costPrice = item.cost_price ?? menuCost ?? item.cost;
+    const qty = Number(item.qty || 0);
+    if (costPrice == null || Number.isNaN(Number(costPrice))) {
+      // Cost kahin maujood nahi: guess nahi karte, item ko report karte hain.
+      missing.push(
+        `${order.id ?? order.localId ?? "?"}/${item.item_name || item.name || item.id || "?"}`
+      );
+      return sum;
+    }
+    return sum + (unitPrice - Number(costPrice)) * qty;
+  }, 0);
+  if (missing.length) {
+    console.warn(
+      `Gross profit: cost missing for ${missing.length} item(s), excluded:`,
+      missing.join(", ")
+    );
+  }
+  return profit;
+}
+
+export function calculateGrossProfit(orders, costMap) {
+  return (orders || []).reduce(
+    (sum, order) => sum + calculateOrderGrossProfit(order, costMap),
+    0
+  );
+}
+
+export function calculateClosingSummary(orders, costMap) {
   const totalOrders = orders.length;
   const completedOrders = orders.filter((o) => ["delivered", "completed"].includes(o.status)).length;
   const pendingOrders = orders.filter((o) =>
@@ -169,17 +217,7 @@ export function calculateClosingSummary(orders) {
   const cardSales = sumBy(validOrders.filter((o) => o.payment_method === "card"));
   const onlineSales = sumBy(validOrders.filter((o) => o.payment_method === "online"));
 
-  let totalProfit = null;
-  const hasCostData = validOrders.some((o) => o.order_items?.some((item) => item.cost));
-  if (hasCostData) {
-    const totalCost = validOrders.reduce(
-      (sum, o) =>
-        sum +
-        (o.order_items?.reduce((s, item) => s + Number(item.cost || 0) * Number(item.qty || 0), 0) || 0),
-      0
-    );
-    totalProfit = totalSales - totalCost;
-  }
+  const totalProfit = calculateGrossProfit(orders, costMap);
 
   return {
     totalOrders,

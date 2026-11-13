@@ -8,6 +8,8 @@ import {
   getDailyClosingsHistory,
   mapOrdersToBusinessDates,
   toLocalDateString,
+  calculateGrossProfit,
+  getMenuCosts,
 } from "../Logic/dailyClosing.js";
 
 export default function SalesReports() {
@@ -36,6 +38,9 @@ export default function SalesReports() {
       const closings = await getDailyClosingsHistory();
       const businessDates = mapOrdersToBusinessDates(orders || [], closings);
 
+      // cost_price NULL ho to menu_items.cost se fallback (fail ho to empty map)
+      const costMap = await getMenuCosts().catch(() => new Map());
+
       if (range === "daily") {
         // Last 7 days
         const last7Days = [];
@@ -46,13 +51,14 @@ export default function SalesReports() {
           const dateStr = toLocalDateString(date);
           const dayOrders = validOrders.filter(o => businessDates.get(o.id) === dateStr);
           const daySales = dayOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-          const dayCost = dayOrders.reduce((sum, o) => {
-            return sum + (o.order_items?.reduce((itemSum, item) => itemSum + (Number(item.cost || 0) * Number(item.qty || 0)), 0) || 0);
-          }, 0);
+          const dayProfit = calculateGrossProfit(dayOrders, costMap);
+
+
+
           last7Days.push({
             label: dayNames[date.getDay()],
             revenue: daySales,
-            profit: daySales - dayCost,
+            profit: dayProfit,
             orders: dayOrders.length,
           });
         }
@@ -74,14 +80,14 @@ export default function SalesReports() {
           });
 
           const weekSales = weekOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-          const weekCost = weekOrders.reduce((sum, o) => {
-            return sum + (o.order_items?.reduce((itemSum, item) => itemSum + (Number(item.cost || 0) * Number(item.qty || 0)), 0) || 0);
-          }, 0);
+          const weekProfit = calculateGrossProfit(weekOrders, costMap);
+
+
 
           weeks.push({
             label: `W${4 - i}`,
             revenue: weekSales,
-            profit: weekSales - weekCost,
+            profit: weekProfit,
             orders: weekOrders.length,
           });
         }
@@ -104,14 +110,14 @@ export default function SalesReports() {
           });
 
           const monthSales = monthOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-          const monthCost = monthOrders.reduce((sum, o) => {
-            return sum + (o.order_items?.reduce((itemSum, item) => itemSum + (Number(item.cost || 0) * Number(item.qty || 0)), 0) || 0);
-          }, 0);
+          const monthProfit = calculateGrossProfit(monthOrders, costMap);
+
+
 
           months.push({
             label: monthNames[date.getMonth()],
             revenue: monthSales,
-            profit: monthSales - monthCost,
+            profit: monthProfit,
             orders: monthOrders.length,
           });
         }
@@ -185,7 +191,7 @@ export default function SalesReports() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatsCard title="Revenue" value={formatPKR(totals.revenue)} hint={`${series.length} periods`} icon={Banknote} />
-        <StatsCard title="Estimated Profit" value={formatPKR(totals.profit)} hint={`${margin}% margin`} icon={Percent} tone="emerald" />
+        <StatsCard title="Gross Profit" value={formatPKR(totals.profit)} hint={`${margin}% margin`} icon={Percent} tone="emerald" />
         <StatsCard title="Orders" value={totals.orders} hint="Completed volume" icon={ShoppingBag} tone="slate" />
       </div>
 

@@ -10,6 +10,7 @@ import {
   calculateClosingSummary,
   createDailyClosing,
   getDailyClosingsHistory,
+  getMenuCosts,
   dayFromDate,
 } from "../Logic/dailyClosing.js";
 
@@ -25,6 +26,7 @@ export default function DailyClosing() {
   const [closingsHistory, setClosingsHistory] = useState([]);
   const [selectedClosingId, setSelectedClosingId] = useState(null);
   const [viewMode, setViewMode] = useState("current"); // "current" | "history"
+  const [menuCosts, setMenuCosts] = useState(null);
   const firstRun = useRef(true);
 
   const closed = !!dayInfo?.closed;
@@ -58,6 +60,10 @@ export default function DailyClosing() {
   useEffect(() => {
     loadCurrentBusinessDay(true);
     loadClosingsHistory();
+    // cost_price NULL ho to menu_items.cost se profit fallback milta hai
+    getMenuCosts()
+      .then(setMenuCosts)
+      .catch(() => setMenuCosts(new Map()));
   }, []);
 
   // Naye orders aayen to numbers update hon (typed form data na mitay)
@@ -70,7 +76,7 @@ export default function DailyClosing() {
   }, [rows]);
 
   const live = useMemo(() => {
-    const record = viewMode === "history" ? selectedClosing : closed ? dayInfo?.lastClosing : null;
+    const record = viewMode === "history" ? selectedClosing : null;
 
     if (record) {
       return {
@@ -87,7 +93,7 @@ export default function DailyClosing() {
       };
     }
 
-    const s = calculateClosingSummary(dayInfo?.orders || []);
+    const s = calculateClosingSummary(dayInfo?.orders || [], menuCosts);
     return {
       cash: s.cashSales,
       card: s.cardSales,
@@ -100,7 +106,7 @@ export default function DailyClosing() {
       cancelled: s.cancelledOrders,
       expectedCash: s.cashSales - Number(expenses || 0),
     };
-  }, [dayInfo, viewMode, selectedClosing, closed, expenses]);
+  }, [dayInfo, viewMode, selectedClosing, closed, expenses, menuCosts]);
 
   const difference = Number(actualCash || 0) - live.expectedCash;
 
@@ -118,7 +124,7 @@ export default function DailyClosing() {
         return;
       }
 
-      const summary = calculateClosingSummary(info.orders);
+      const summary = calculateClosingSummary(info.orders, menuCosts);
       await createDailyClosing(summary, expenses, actualCash, note, "Manager");
 
       setConfirmOpen(false);
@@ -234,7 +240,7 @@ export default function DailyClosing() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatsCard title="Business day sales" value={formatPKR(live.sales || 0)} icon={Wallet} />
         <StatsCard title="Cash collected" value={formatPKR(live.cash || 0)} icon={Banknote} tone="emerald" />
-        <StatsCard title="Profit" value={formatPKR(live.profit || 0)} icon={TrendingUp} tone="emerald" />
+        <StatsCard title="Gross Profit" value={formatPKR(live.profit || 0)} icon={TrendingUp} tone="emerald" />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -294,6 +300,10 @@ export default function DailyClosing() {
             <div className="flex justify-between">
               <dt className="text-slate-500">Cancelled</dt>
               <dd>{live.cancelled || 0}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Gross Profit</dt>
+              <dd className="font-semibold text-emerald-700">{formatPKR(live.profit || 0)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-slate-500">Expected cash</dt>

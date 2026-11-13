@@ -180,6 +180,23 @@ const useOrders = () => {
 
 export default useOrders;
 
+export const toUiOrderType = (row, isPosOrder) => {
+  let rawType = row?.order_type || row?.type;
+  if (isPosOrder && (!rawType || rawType === "dinein" || rawType === "dine-in")) {
+    const match = String(row?.instructions || "").match(/\[POS\]\s*([a-zA-Z-]+)/i);
+    if (match && match[1]) {
+      rawType = match[1];
+    }
+  }
+  if (!rawType) return isPosOrder ? "dine-in" : "delivery";
+  const normalized = String(rawType).toLowerCase().replace(/[^a-z]/g, "");
+  if (normalized === "takeaway") return "takeaway";
+  if (normalized === "pickup") return "pickup";
+  if (normalized === "walkin") return "walk-in";
+  if (normalized === "dinein") return "dine-in";
+  return String(rawType).toLowerCase();
+};
+
 export const toUiOrder = (row) => {
   const isPosOrder = row.customer_title === "POS";
 
@@ -200,7 +217,7 @@ export const toUiOrder = (row) => {
     source: isPosOrder ? "pos" : "website",
     paymentStatus:
       row.payment_status || (row.payment_method === "cod" ? "unpaid" : "pending"),
-    type: isPosOrder ? "Dine-in" : "Delivery",
+    type: toUiOrderType(row, isPosOrder),
     createdAt: row.created_at
       ? new Date(row.created_at).toLocaleString()
       : "",

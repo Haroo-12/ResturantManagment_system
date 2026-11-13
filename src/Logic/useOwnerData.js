@@ -3,7 +3,8 @@ import { supabase } from "../supabas.js";
 import {
   getBusinessDate,
   getDailyClosingsHistory,
-  calculateClosingSummary,
+  calculateGrossProfit,
+  getMenuCosts,
   mapOrdersToBusinessDates,
   toLocalDateString,
 } from "./dailyClosing.js";
@@ -63,15 +64,10 @@ const useOwnerData = () => {
       const pendingOrders = validOrders.filter(o => ["pending", "confirmed", "preparing", "out_for_delivery"].includes(o.status)).length;
       const cancelledOrders = (allOrders || []).filter(o => o.status === "cancelled").length;
 
-      // Calculate profit if cost data is available
-      let totalProfit = null;
-      const hasCostData = (allOrders || []).some(o => o.order_items?.some(item => item.cost));
-      if (hasCostData) {
-        const totalCost = (allOrders || []).reduce((sum, o) => {
-          return sum + (o.order_items?.reduce((itemSum, item) => itemSum + (Number(item.cost || 0) * Number(item.qty || 0)), 0) || 0);
-        }, 0);
-        totalProfit = totalSales - totalCost;
-      }
+      // Calculate gross profit using saved cost_price snapshots
+      // (cost_price NULL ho to menu_items.cost se fallback)
+      const costMap = await getMenuCosts().catch(() => new Map());
+      const totalProfit = calculateGrossProfit(allOrders || [], costMap);
 
       // Calculate weekly sales (last 7 days)
       const sevenDaysAgo = new Date();

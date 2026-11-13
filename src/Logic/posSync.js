@@ -125,6 +125,7 @@ async function syncOne(order) {
       option_label: item.option || "",
       qty: item.qty,
       unit_price: item.price,
+      cost_price: item.cost ?? null,
       note: item.note || "",
     }));
 
