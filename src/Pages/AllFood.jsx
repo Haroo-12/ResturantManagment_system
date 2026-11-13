@@ -3,7 +3,7 @@ import SearchBar from '../Components/SearchBar'
 import TopNavbor from '../Components/TopNavbor'
 import CategoryItems from '../Components/CategoryItems'
 
-import Footer from './footer'
+import Footer from './Footer'
 
 const AllFood = () => {
   return (
