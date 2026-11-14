@@ -4,6 +4,10 @@ import slider from "../Arrays/slider.js";
 
 const AUTOPLAY_DELAY = 5000;
 
+// Apni banner image ki asli size yahan likho (neeche samjhaya hai)
+const IMG_WIDTH = 1600;
+const IMG_HEIGHT = 600;
+
 const arrowBtn =
   "absolute top-1/2 -translate-y-1/2 z-20 grid place-items-center size-9 sm:size-12 rounded-full bg-white/85 text-neutral-700 shadow-md backdrop-blur-sm transition hover:bg-white hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
@@ -30,7 +34,6 @@ const Slider = () => {
 
   return (
     <section className="w-full flex justify-center pt-4 sm:pt-8 lg:pb-10 pb-7">
-      {/* grid: saari slides ek hi cell mein stack hoti hain, height image se aati hai */}
       <div className="relative grid w-[96%] overflow-hidden rounded-xl sm:rounded-2xl bg-neutral-900">
         {slider.map((item, index) => (
           <div
@@ -45,11 +48,12 @@ const Slider = () => {
             <img
               src={item.image}
               alt={item.title || `Coffee banner ${index + 1}`}
-              /* mobile/tablet: natural ratio (zero crop) | laptop: 400px + cover */
+              width={IMG_WIDTH}
+              height={IMG_HEIGHT}
               className="block w-full h-auto lg:h-[400px] lg:object-cover object-center"
               loading={index === 0 ? "eager" : "lazy"}
               fetchPriority={index === 0 ? "high" : "auto"}
-              decoding="async"
+              decoding={index === 0 ? "sync" : "async"}
             />
           </div>
         ))}

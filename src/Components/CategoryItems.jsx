@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import CategoryBanner from "./CategoryBanner";
 import ViewCart from "./ViewCart.jsx";
-import CartQuantityControl from '../Addtocartcomponents/CartQuantityControl.jsx';
+import CartQuantityControl from "../Addtocartcomponents/CartQuantityControl.jsx";
 import { AddtocartContexts } from "../AddtocartContext/Addtocartcontext";
 import PopularItems from "./PopularItems.jsx";
 import { supabase } from "../supabas.js"; // apna sahi path
@@ -20,6 +20,44 @@ const bannerFallback = {
   "ice-teas": "/images/ice-teas-banner.webp",
 };
 
+// Skeleton: asli menu jaisi shakal, taake load hone par page na hile
+const MenuSkeleton = () => (
+  <div className="min-h-screen animate-pulse" aria-busy="true" aria-label="Loading menu">
+    {/* Popular items ki jagah */}
+    <div className="px-3 pt-4">
+      <div className="h-6 w-40 rounded bg-gray-200" />
+      <div className="mt-2 h-4 w-28 rounded bg-gray-200" />
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="aspect-square rounded-xl bg-gray-200" />
+        ))}
+      </div>
+    </div>
+
+    {/* Category banner ki jagah */}
+    <div className="mx-auto mt-8 h-32 w-[96%] rounded-xl bg-gray-200 sm:h-44" />
+
+    {/* Menu cards ki jagah */}
+    <div className="flex flex-wrap items-center justify-center gap-4 px-2 pt-7 lg:pt-10">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex w-full gap-2 rounded-xl bg-gray-100 px-2 py-2 sm:px-3 lg:w-[32%]"
+        >
+          <div className="flex w-[65%] flex-col gap-3 px-1 sm:px-2">
+            <div className="h-6 w-3/4 rounded bg-gray-200" />
+            <div className="h-4 w-1/2 rounded bg-gray-200" />
+            <div className="h-4 w-2/3 rounded bg-gray-200" />
+          </div>
+          <div className="flex w-[35%] items-center pt-2">
+            <div className="aspect-square w-full rounded-xl bg-gray-200" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const CategoryItems = () => {
   const { cart } = useContext(AddtocartContexts);
   const navigate = useNavigate();
@@ -30,8 +68,16 @@ const CategoryItems = () => {
   // Menu ab Supabase se aata hai, shape purani menuData jaisi hi banayi hai
   useEffect(() => {
     Promise.all([
-      supabase.from("categories").select("id, name, slug, banner_url").eq("is_active", true).order("id"),
-      supabase.from("menu_items").select("*").eq("is_available", true).order("id"),
+      supabase
+        .from("categories")
+        .select("id, name, slug, banner_url")
+        .eq("is_active", true)
+        .order("id"),
+      supabase
+        .from("menu_items")
+        .select("id, name, hot_price, iced_price, image_url, category_id")
+        .eq("is_available", true)
+        .order("id"),
     ]).then(([c, m]) => {
       if (c.error || m.error) {
         console.error((c.error || m.error).message);
@@ -59,7 +105,7 @@ const CategoryItems = () => {
   }, []);
 
   if (loading) {
-    return <div className="py-16 text-center text-sm text-gray-500">Loading menu...</div>;
+    return <MenuSkeleton />;
   }
 
   return (
