@@ -4,10 +4,11 @@ import { ShoppingBag } from "lucide-react";
 import { AddtocartContexts } from "../AddtocartContext/Addtocartcontext";
 import { supabase } from "../supabas.js"; // apna sahi path
 import Navbor from "../HomeComponents/Navbor.jsx";
-import Footer from "./Footer.jsx";
+// import Footer from "./Footer.jsx";
 import CheckoutForm from "../CheckoutComponent/CheckoutForm.jsx";
 import OrderSummary from "../CheckoutComponent/OrderSummary.jsx";
 import OrderSuccess from "../CheckoutComponent/OrderSuccess.jsx";
+import Footer from "./Footer.jsx";
 
 const Checkout = () => {
   useEffect(() => {
@@ -123,7 +124,8 @@ const Checkout = () => {
           onBack={() => navigate(-1)}
         />
       </div>
-      <Footer />
+      <Footer/>
+      {/* <Footer /> */}
     </div>
   );
 };
