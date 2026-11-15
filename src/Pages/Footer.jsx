@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronUp } from "lucide-react";
 import logo from '../assets/logo.jpg'
 const FacebookIcon = (props) => (
@@ -86,6 +86,10 @@ const Footer = () => {
   <img
     src={logo}
     alt="Costa Coffee Logo"
+    width="128"
+    height="128"
+    loading="lazy"
+    decoding="async"
     className="w-full h-full rounded-full object-contain"
   />
 </div>

@@ -1,8 +1,12 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AddtocartContexts } from "../AddtocartContext/Addtocartcontext";
 import CartQuantityControl from "../Addtocartcomponents/CartQuantityControl.jsx";
-import { supabase } from "../supabas.js"; // apna sahi path
+import {
+  cachedQuery,
+  siteCategoriesQuery,
+  siteMenuItemsQuery,
+} from "../supabas.js";
 
 // Asli cards jaisi hi size, taake data aane par page na hile
 const PopularSkeleton = () => (
@@ -33,31 +37,33 @@ const PopularItems = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // "popular" category ke items Supabase se
+  // "popular" category ke items — CategoryItems wali hi cached queries reuse
   useEffect(() => {
-    supabase
-      .from("menu_items")
-      .select("id, name, hot_price, iced_price, image_url, categories!inner(slug)")
-      .eq("categories.slug", "popular")
-      .eq("is_available", true)
-      .order("id")
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(error.message);
-          setLoading(false);
-          return;
-        }
-        setItems(
-          data.map((i) => ({
+    Promise.all([
+      cachedQuery("site-categories", siteCategoriesQuery),
+      cachedQuery("site-menu-items", siteMenuItemsQuery),
+    ]).then(([c, m]) => {
+      if (c.error || m.error) {
+        console.error((c.error || m.error).message);
+        setLoading(false);
+        return;
+      }
+      const slugByCatId = new Map(
+        (c.data || []).map((cat) => [cat.id, cat.slug])
+      );
+      setItems(
+        (m.data || [])
+          .filter((i) => slugByCatId.get(i.category_id) === "popular")
+          .map((i) => ({
             id: i.id,
             name: i.name,
             hotPrice: i.hot_price,
             icedPrice: i.iced_price,
             image: i.image_url,
           }))
-        );
-        setLoading(false);
-      });
+      );
+      setLoading(false);
+    });
   }, []);
 
   return (

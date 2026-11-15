@@ -1,4 +1,3 @@
-import React from 'react'
 import Navbor from '../HomeComponents/Navbor'
 import Slider from '../HomeComponents/Slider'
 import AllFood from './AllFood'
