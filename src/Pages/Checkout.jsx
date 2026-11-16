@@ -47,7 +47,7 @@ const Checkout = () => {
 
   // Order database mein save hota hai (total aur items server cart se khud banata hai)
   const handlePlaceOrder = async () => {
-    if (placing) return;
+    if (placing || placed) return;
     setPlacing(true);
     setOrderError("");
 
@@ -64,13 +64,19 @@ const Checkout = () => {
     setPlacing(false);
     if (error) return setOrderError(error.message);
 
+    // Popup dikhao. Cart ab nahi khali karte, home par jate waqt karenge
     setPlaced({ id: data, total: grandTotal });
+  };
+
+  // Popup ke baad: cart khali karo aur home par jao
+  const handleDone = () => {
     setCart([]);
     setcount(0);
+    navigate("/");
   };
 
   // Cart database se load ho rahi hai (refresh par "empty" na dikhe)
-  if (cartLoading) {
+  if (cartLoading && !placed) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-50 text-sm text-slate-500">
         Loading your cart...
@@ -78,13 +84,8 @@ const Checkout = () => {
     );
   }
 
-  // Order ho gaya
-  if (placed) {
-    return <OrderSuccess order={placed} onDone={() => navigate("/")} />;
-  }
-
   // Cart khali
-  if (cart.length === 0) {
+  if (cart.length === 0 && !placed) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-50 p-4">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-lg">
@@ -126,6 +127,9 @@ const Checkout = () => {
       </div>
       <Footer/>
       {/* <Footer /> */}
+
+      {/* Order successful popup (checkout ke upar) */}
+      {placed && <OrderSuccess order={placed} onDone={handleDone} />}
     </div>
   );
 };

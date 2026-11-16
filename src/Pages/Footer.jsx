@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ChevronUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronUp, ArrowRight } from "lucide-react";
 import logo from '../assets/logo.jpg'
 const FacebookIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -135,6 +136,18 @@ const Footer = () => {
                 {label}
               </a>
             ))}
+          </div>
+
+          {/* Sign in arrow */}
+          <div className="mt-3 flex justify-center md:justify-start">
+            <Link
+              to="/signin"
+              aria-label="Sign in"
+              title="Sign in"
+              className="grid size-8 place-items-center rounded-full border border-gray-200 text-slate-500 transition hover:border-[var(--color-primary-600)] hover:text-[var(--color-primary-600)] hover:scale-110"
+            >
+              <ArrowRight className="size-4" />
+            </Link>
           </div>
         </div>
       </div>
