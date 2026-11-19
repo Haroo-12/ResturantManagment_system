@@ -86,6 +86,8 @@ const CartDrawer = ({ isOpen, onClose }) => {
                       <img
                         src={item.image}
                         alt={item.name}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-contain p-1"
                       />
                     )}

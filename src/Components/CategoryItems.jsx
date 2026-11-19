@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import CategoryBanner from "./CategoryBanner";
@@ -6,7 +6,11 @@ import ViewCart from "./ViewCart.jsx";
 import CartQuantityControl from "../Addtocartcomponents/CartQuantityControl.jsx";
 import { AddtocartContexts } from "../AddtocartContext/Addtocartcontext";
 import PopularItems from "./PopularItems.jsx";
-import { supabase } from "../supabas.js"; // apna sahi path
+import {
+  cachedQuery,
+  siteCategoriesQuery,
+  siteMenuItemsQuery,
+} from "../supabas.js";
 
 // Database mein banner_url khali hai, to purane local banners yahan se aate hain
 const bannerFallback = {
@@ -37,24 +41,30 @@ const MenuSkeleton = () => (
     {/* Category banner ki jagah */}
     <div className="mx-auto mt-8 h-32 w-[96%] rounded-xl bg-gray-200 sm:h-44" />
 
-    {/* Menu cards ki jagah */}
-    <div className="flex flex-wrap items-center justify-center gap-4 px-2 pt-7 lg:pt-10">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div
-          key={i}
-          className="flex w-full gap-2 rounded-xl bg-gray-100 px-2 py-2 sm:px-3 lg:w-[32%]"
-        >
-          <div className="flex w-[65%] flex-col gap-3 px-1 sm:px-2">
-            <div className="h-6 w-3/4 rounded bg-gray-200" />
-            <div className="h-4 w-1/2 rounded bg-gray-200" />
-            <div className="h-4 w-2/3 rounded bg-gray-200" />
-          </div>
-          <div className="flex w-[35%] items-center pt-2">
-            <div className="aspect-square w-full rounded-xl bg-gray-200" />
-          </div>
+    {/* Menu cards ki jagah — real menu mein kai sections hote hain,
+        skeleton bhi lamba rakha taake data aane par shift na ho */}
+    {[0, 1].map((section) => (
+      <div key={section}>
+        <div className="mx-auto mt-8 h-32 w-[96%] rounded-xl bg-gray-200 sm:h-44" />
+        <div className="flex flex-wrap items-center justify-center gap-4 px-2 pt-7 lg:pt-10">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex w-full gap-2 rounded-xl bg-gray-100 px-2 py-2 sm:px-3 lg:w-[32%]"
+            >
+              <div className="flex w-[65%] flex-col gap-3 px-1 sm:px-2">
+                <div className="h-6 w-3/4 rounded bg-gray-200" />
+                <div className="h-4 w-1/2 rounded bg-gray-200" />
+                <div className="h-4 w-2/3 rounded bg-gray-200" />
+              </div>
+              <div className="flex w-[35%] items-center pt-2">
+                <div className="aspect-square w-full rounded-xl bg-gray-200" />
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      </div>
+    ))}
   </div>
 );
 
@@ -68,16 +78,8 @@ const CategoryItems = () => {
   // Menu ab Supabase se aata hai, shape purani menuData jaisi hi banayi hai
   useEffect(() => {
     Promise.all([
-      supabase
-        .from("categories")
-        .select("id, name, slug, banner_url")
-        .eq("is_active", true)
-        .order("id"),
-      supabase
-        .from("menu_items")
-        .select("id, name, hot_price, iced_price, image_url, category_id")
-        .eq("is_available", true)
-        .order("id"),
+      cachedQuery("site-categories", siteCategoriesQuery),
+      cachedQuery("site-menu-items", siteMenuItemsQuery),
     ]).then(([c, m]) => {
       if (c.error || m.error) {
         console.error((c.error || m.error).message);

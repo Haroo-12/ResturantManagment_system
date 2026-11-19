@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { supabase } from '../supabas.js'; // apna sahi path
+import { cachedQuery, siteCategoriesQuery } from '../supabas.js';
 
 const ACTIVE_OFFSET = 120; // navbar ke neeche wo line jahan section check hota hai
 
@@ -12,18 +12,16 @@ const TopNavbor = () => {
   const [activeId, setActiveId] = useState(null);
   const [categories, setCategories] = useState([]);
 
-  // Categories Supabase se ("popular" navbar mein nahi dikhegi)
+  // Categories cached shared query se ("popular" navbar mein nahi dikhegi)
   useEffect(() => {
-    supabase
-      .from('categories')
-      .select('slug, name')
-      .eq('is_active', true)
-      .neq('slug', 'popular')
-      .order('id')
-      .then(({ data, error }) => {
-        if (error) return console.error(error.message);
-        setCategories(data.map((c) => ({ id: c.slug, title: c.name })));
-      });
+    cachedQuery('site-categories', siteCategoriesQuery).then(({ data, error }) => {
+      if (error) return console.error(error.message);
+      setCategories(
+        (data || [])
+          .filter((c) => c.slug !== 'popular')
+          .map((c) => ({ id: c.slug, title: c.name }))
+      );
+    });
   }, []);
 
   // Sticky + active category detect
@@ -116,7 +114,7 @@ const TopNavbor = () => {
         {/* Categories */}
         <div
           ref={navRef}
-          className="relative flex flex-1 min-w-0 flex-nowrap gap-3 overflow-x-auto whitespace-nowrap py-1 scrollbar-hide"
+          className="relative flex flex-1 min-w-0 flex-nowrap gap-3 overflow-x-auto whitespace-nowrap py-1 scrollbar-hide min-h-[48px]"
         >
           {categories.map((category) => {
             const isActive = activeId === category.id;

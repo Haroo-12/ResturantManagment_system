@@ -1,5 +1,5 @@
 
-import React, { useContext } from 'react'
+import { useContext } from 'react'
 import { MapPin, Phone, ShoppingCart } from "lucide-react";
 import { AddtocartContexts } from '../AddtocartContext/Addtocartcontext';
 import logo from '../assets/logo.jpg'
@@ -42,6 +42,9 @@ const Navbor = ({ hideCart = false }) => {
         <img
           src={logo}
           alt="Restaurant Logo"
+          width="110"
+          height="110"
+          decoding="async"
           className="w-[48px] h-[48px] sm:w-[54px] sm:h-[54px] md:w-[100px] md:h-[100px] lg:w-[110px] lg:h-[110px] rounded-full object-contain"
         />
       </div>

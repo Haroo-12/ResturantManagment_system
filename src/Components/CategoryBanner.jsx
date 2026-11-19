@@ -1,5 +1,3 @@
-import React from 'react'
-
 const CategoryBanner = ({category}) => {
   return (
     <div className='w-full lg:pt-10 pt-7 flex justify-center'>
