@@ -521,10 +521,10 @@ export default function POS({ items = [], orders = [], onCheckout }) {
 
   return (
     <section>
-      <PageHeader
+      {/* <PageHeader
         title="Point of Sale"
         subtitle="Manage dine-in tables, takeaway and walk-in orders."
-      />
+      /> */}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span
@@ -868,7 +868,7 @@ export default function POS({ items = [], orders = [], onCheckout }) {
                 <dt>Subtotal</dt>
                 <dd className="tabular-nums">{formatPKR(totals.subtotal)}</dd>
               </div>
-              <div className="flex items-center justify-between text-slate-600">
+              {/* <div className="flex items-center justify-between text-slate-600">
                 <dt>
                   <label htmlFor="pos-discount">Discount (PKR)</label>
                 </dt>
@@ -882,11 +882,11 @@ export default function POS({ items = [], orders = [], onCheckout }) {
                     className="w-24 rounded-md border border-slate-200 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-[#dc2626]"
                   />
                 </dd>
-              </div>
-              <div className="flex justify-between text-slate-600">
+              </div> */}
+              {/* <div className="flex justify-between text-slate-600">
                 <dt>Tax (5%)</dt>
                 <dd className="tabular-nums">{formatPKR(totals.tax)}</dd>
-              </div>
+              </div> */}
               <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-semibold text-slate-900">
                 <dt>Total</dt>
                 <dd className="tabular-nums">{formatPKR(totals.total)}</dd>
