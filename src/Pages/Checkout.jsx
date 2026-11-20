@@ -78,7 +78,7 @@ const Checkout = () => {
   // Cart database se load ho rahi hai (refresh par "empty" na dikhe)
   if (cartLoading && !placed) {
     return (
-      <div className="min-h-screen grid place-items-center bg-gray-50 text-sm text-slate-500">
+      <div className="min-h-screen grid place-items-center bg-gray-50 px-4 text-center text-xs sm:text-sm text-slate-500">
         Loading your cart...
       </div>
     );
@@ -87,13 +87,13 @@ const Checkout = () => {
   // Cart khali
   if (cart.length === 0 && !placed) {
     return (
-      <div className="min-h-screen grid place-items-center bg-gray-50 p-4">
-        <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-lg">
-          <ShoppingBag className="mx-auto size-14 text-gray-300" />
-          <p className="mt-3 text-lg font-bold text-slate-800">Your cart is empty</p>
+      <div className="min-h-screen grid place-items-center bg-gray-50 p-3 sm:p-4">
+        <div className="w-full max-w-[20rem] sm:max-w-sm rounded-2xl sm:rounded-3xl bg-white p-5 sm:p-8 text-center shadow-lg">
+          <ShoppingBag className="mx-auto size-12 sm:size-14 text-gray-300" />
+          <p className="mt-3 text-base sm:text-lg font-bold text-slate-800">Your cart is empty</p>
           <button
             onClick={() => navigate(-1)}
-            className="mt-5 rounded-full px-6 py-3 font-bold text-white"
+            className="mt-4 sm:mt-5 w-full sm:w-auto rounded-full px-6 py-3 text-sm sm:text-base font-bold text-white"
             style={{ background: "var(--gradient-primary)" }}
           >
             Browse menu
@@ -104,9 +104,9 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gray-50 px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       <Navbor />
-      <div className="mx-auto grid w-full max-w-[1200px] gap-6 lg:grid-cols-[1fr_400px] pt-12">
+      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 pt-14 sm:gap-6 sm:pt-16 lg:grid-cols-[1fr_380px] lg:pt-12 xl:grid-cols-[1fr_400px] [&>*]:min-w-0">
         <CheckoutForm
           form={form}
           onChange={handleChange}

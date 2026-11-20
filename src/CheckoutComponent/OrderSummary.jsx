@@ -55,7 +55,7 @@ const OrderSummary = ({
     </div>
 
     {/* Promo */}
-    <div className="flex gap-2 rounded-2xl border border-gray-100 bg-white p-3">
+    {/* <div className="flex gap-2 rounded-2xl border border-gray-100 bg-white p-3">
       <input
         value={promo}
         onChange={(e) => onPromoChange(e.target.value)}
@@ -69,7 +69,7 @@ const OrderSummary = ({
       >
         Apply
       </button>
-    </div>
+    </div> */}
 
     {error && (
       <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</p>
