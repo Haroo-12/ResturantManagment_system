@@ -1,11 +1,13 @@
 import { ArrowRight } from "lucide-react";
 
-const SearchBar = () => {
+const SearchBar = ({ value, onChange }) => {
   return (
 <div className="w-full flex justify-center lg:pt-10 pt-7">
     <div className="lg:w-[40%] w-[90%] flex items-center h-[44px] sm:h-[50px] md:h-[56px] pl-4 sm:pl-5 pr-1.5 bg-white rounded-full border border-gray-300 shadow-md">
       <input
         type="text"
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
         placeholder="Search for Iced Spanish..."
         className="flex-1 min-w-0 bg-transparent outline-none text-center text-xs sm:text-sm md:text-base text-gray-700 placeholder:text-gray-500"
       />

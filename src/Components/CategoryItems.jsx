@@ -68,7 +68,7 @@ const MenuSkeleton = () => (
   </div>
 );
 
-const CategoryItems = () => {
+const CategoryItems = ({ searchQuery = "" }) => {
   const { cart } = useContext(AddtocartContexts);
   const navigate = useNavigate();
 
@@ -110,11 +110,33 @@ const CategoryItems = () => {
     return <MenuSkeleton />;
   }
 
+  // Search: saare categories (popular bhi) mein name match karo.
+  // Term empty ho to original menuData waisi hi rehti hai.
+  const term = searchQuery.trim().toLowerCase();
+  const filteredMenuData = term
+    ? menuData
+        .map((cat) => ({
+          ...cat,
+          items: cat.items.filter((i) =>
+            i.name.toLowerCase().includes(term)
+          ),
+        }))
+        .filter((cat) => cat.items.length > 0)
+    : menuData;
+
+  const popularHasMatches = filteredMenuData.some((cat) => cat.id === "popular");
+
   return (
     <div>
-      <PopularItems />
+      {term && filteredMenuData.length === 0 ? (
+        <p className="py-16 text-center text-sm text-slate-500">No items found.</p>
+      ) : (
+        <>
+          {(!term || popularHasMatches) && (
+            <PopularItems searchQuery={searchQuery} />
+          )}
 
-      {menuData
+      {filteredMenuData
         .filter((category) => category.id !== "popular")
         .map((category) => (
           <section key={category.id} id={category.id} className="scroll-mt-24">
@@ -199,6 +221,8 @@ const CategoryItems = () => {
             </div>
           </section>
         ))}
+        </>
+      )}
 
       <ViewCart />
     </div>
