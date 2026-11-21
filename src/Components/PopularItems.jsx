@@ -30,7 +30,7 @@ const PopularSkeleton = () => (
   </div>
 );
 
-const PopularItems = () => {
+const PopularItems = ({ searchQuery = "" }) => {
   const { cart } = useContext(AddtocartContexts);
   const navigate = useNavigate();
 
@@ -66,6 +66,12 @@ const PopularItems = () => {
     });
   }, []);
 
+  // Search filter — term empty ho to saare items
+  const term = searchQuery.trim().toLowerCase();
+  const visibleItems = term
+    ? items.filter((i) => i.name.toLowerCase().includes(term))
+    : items;
+
   return (
     <div className="lg:pt-10 pt-7">
       <div className="lg:px-8 px-4 flex flex-col gap-2">
@@ -77,7 +83,7 @@ const PopularItems = () => {
         <PopularSkeleton />
       ) : (
         <div className="w-full flex flex-wrap justify-center gap-5 lg:pt-10 pt-7">
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const cartItem = cart.find(
               (c) => String(c.id) === String(item.id) && c.categoryId === "popular"
             );
